@@ -1,0 +1,7 @@
+Add cudasift Wrapper
+Add VLAD And BOGVW
+Add visualization
+fix loss functions
+fix framework/trainer
+fix the utils
+Update how data works aye
