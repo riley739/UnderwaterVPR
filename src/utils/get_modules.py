@@ -28,8 +28,6 @@ def get_dataset(name, config, dataset_type):
     path = os.path.join(PROJECT_ROOT, "data", dataset_type)
     path = get_path(name,path)
 
-    print(path)
-
     params = {
         "name": name,
         "path": path,
