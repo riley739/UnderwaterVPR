@@ -35,7 +35,8 @@ def parse_args() -> Dict[str, Any]:
     parser.add_argument('--dev', action='store_true', default=False, help='Enable fast development run')
     parser.add_argument('--display_theme', type=str, default="default", help='Theme for the console display')
     parser.add_argument('--checkpoint', type=str, help='Theme for the console display')
-
+    parser.add_argument('--device', type=str, default="cuda", help='Device to use for training and evaluation')
+    
     # Datamodule arguments
     parser.add_argument('--train_set', type=str, help='Name of the training dataset')
     parser.add_argument('--val_sets', nargs='+', help='Names of the validation datasets')
@@ -140,6 +141,8 @@ def update_config_with_args_and_defaults(config: Dict[str, Any], args: argparse.
         config['dev'] = arg_dict['dev']
     if arg_dict["checkpoint"] is not None:
         config["checkpoint"] = arg_dict["checkpoint"]
+    if arg_dict["device"] is not None:
+        config["device"] = arg_dict["device"]
     
     return config
 

@@ -12,8 +12,7 @@ from lightning.pytorch.callbacks import RichProgressBar, ModelCheckpoint
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 from lightning.pytorch.loggers import TensorBoardLogger
 from src.core.datamodule import DataModule
-from src.core.framework import Framework
-from src.utils.get_modules import get_backbone, get_aggregator, get_loss_function
+from src.utils.modules_manager import create_model
 from src.utils.config_manager import parse_args
 
 from rich.traceback import install
@@ -32,28 +31,7 @@ def train(config):
     # let's create the VPR DataModule
     datamodule = DataModule(config["datamodule"])
 
-
-    # Let's instantiate the backbone, aggregator and loss function. These are the main components of the VPRFramework
-    # Make sure the model_config.yaml file is properly configured
-    backbone = get_backbone(config['backbone'])
-    out_channels = backbone.out_channels # all backbones should have an out_channels attribute
-    
-    # most of the time, the aggregator needs to know the number of output channels of the backbone
-    # that arguments is passed to the aggregator as a parameter `in_channels` for some aggregators
-    #TODO: Hacky feel like theres a better way to do this..
-    if 'in_channels' in config['aggregator']['params']:
-        if config['aggregator']['params']['in_channels'] is None:
-            config['aggregator']['params']['in_channels'] = out_channels
-    
-    aggregator = get_aggregator(config['aggregator'])
-    loss_function = get_loss_function(config['loss_function'])
-
-    vpr_model = Framework(
-        backbone=backbone,
-        aggregator=aggregator,
-        loss_function=loss_function,
-        config=config, # pass the config to the framework in order to save it
-    )
+    vpr_model = create_model(config)
 
     if config["compile"]:
         vpr_model = torch.compile(vpr_model)
@@ -65,8 +43,8 @@ def train(config):
     # e.g. a BoQ model with ResNet50 backbone will be saved under logs/ResNet50/BoQ
     # this makes it easy to compared different aggregators with the same backbone
     tensorboard_logger = TensorBoardLogger(
-        save_dir=f"./logs/{backbone.backbone_name}",
-        name=f"{aggregator.__class__.__name__}",
+        save_dir=f"./logs/{config['backbone']['model']}",
+        name=f"{config["aggregator"]["method"]}",
         default_hp_metric=False
     )
     

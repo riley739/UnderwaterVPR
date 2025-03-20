@@ -38,6 +38,7 @@ class BaseValDataset(Dataset):
         self.num_references = len(self.dbImages)
         self.num_queries = len(self.qImages)
 
+
     def __getitem__(self, index: int, return_path = False) -> Tuple[Any, int]:
         """
         Args:
