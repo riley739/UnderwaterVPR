@@ -129,8 +129,7 @@ class GraphDataset(Dataset):
         edges = []
         b = self.tfidf
 
-        for i in range(0,len(self.tfidf)):
-            print(i)
+        for i in tqdm(range(0,len(self.tfidf))):
             a = self.tfidf[i]
 
             cosine_similarity = np.dot(a, b.T)/(norm(a) * norm(b, axis=1))

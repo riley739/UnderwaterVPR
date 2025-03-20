@@ -64,3 +64,15 @@ trainer:
     - 20
     - 30
   lr_mult: 0.1 # learning rate multiplier at each milestone
+
+
+evaluation:
+  log_dir: "logs"
+  checkpoint_path: "/home/rbeh9716/Desktop/OpenVPRLab/logs/dinov2_vits14/BoQ/version_1/checkpoints/epoch(00)_step(0284)_R1[0.0000]_R5[0.0000].ckpt"
+  save_descriptors: True
+  recall_values: [1, 5, 10, 15, 20, 25]
+  use_labels: False
+  num_preds_to_save: 100
+  save_only_wrong_preds: False
+  descriptor_dimension: 12288
+  visualize_cameras: True 

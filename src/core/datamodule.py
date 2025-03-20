@@ -12,7 +12,7 @@ from torch.utils.data.dataloader import DataLoader
 from torchvision import transforms as T
 from torchvision.transforms import v2  as T2
 
-from src.utils.get_modules import get_dataset
+from src.utils.modules_manager import get_dataset
 
 
 
@@ -92,6 +92,14 @@ class DataModule(L.LightningDataModule):
                 )
             val_dataloaders.append(dl)
         return val_dataloaders
+    
+    def get_datasets(self, type):
+        if type == "train":
+            return self.train_dataset
+        elif type == "val":
+            return self.val_datasets
+        else:
+            raise ValueError(f"Unknown type {type}")
     
     def _get_train_dataset(self):
         

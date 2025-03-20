@@ -15,7 +15,7 @@ class GCN(torch.nn.Module):
         # Initialize the layers
         self.conv1 = GCNConv(dataset.num_features, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        self.out = Linear(hidden_channels, 247)
+        self.out = Linear(hidden_channels, 10)
 
     def forward(self, x, edge_index):
         # First Message Passing Layer (Transformation)
@@ -76,7 +76,6 @@ def train():
 def test():
       model.eval()
       out = model(data.x, data.edge_index)
-      print(out)
       # Use the class with highest probability.
       pred = out.argmax(dim=1)  
       # Check against ground-truth labels.
@@ -96,5 +95,9 @@ for epoch in range(0, 1000):
 
 
 test_acc, pred = test()
-print(np.where(test_mask == True))
-print(pred)
+print(test_acc)
+
+
+
+# print(np.where(test_mask == True))
+# print(pred)

@@ -9,22 +9,32 @@ from collections import Counter
 import pickle 
 from tqdm import tqdm
 import pandas as pd
+from PIL import Image
 
 import joblib
+
+import logging
+
+# logging.basicConfig(
+#     filename='out.log',  # Log file name
+#     level=print,        # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+#     format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
+# )
+
+
 
 class BOVW():
     def __init__(self, image_folder = ""):        
         self.image_path = image_folder
-        self.k = 1000
+        self.k = 200
         self.iters = 1 
 
         self.top_k = 5
 
     def create_vocab(self):
-        print("STARTING")
-        self.load_dataset()
-        # print("LOADED DATASET")
-        
+        # print("STARTING")
+        # self.load_dataset_imagenet()
+        print("Extracting Features")
         self.extract_features()
         print("EXTRACTED FEATURES")
         self.cluster()
@@ -48,29 +58,48 @@ class BOVW():
         with open("logs/frequency_vectors.pkl", "wb") as f:
             pickle.dump(self.frequency_vectors, f)
 
-        with open("logs/image_names.pkl", "wb") as f:
-            pickle.dump(self.img_names, f)
-
 
         with open("logs/labels.pkl", "wb") as f:
             pickle.dump(self.labels, f)
+
+        with open("logs/image_names.pkl", "wb") as f:
+            pickle.dump(self.img_names, f)
         
     def extract_features(self, sample_size = 1000):
+
+        # from datasets import load_dataset
+
+        # imagenet = load_dataset(
+        #     'frgfm/imagenette',
+        #     'full_size',
+        #     split='train',
+        # )      
+        import glob 
+
+        imgs = glob.glob("data/raw/images/*.jpg")
+        self.num_images = len(imgs)
         extractor = cv2.xfeatures2d.SIFT_create()
 
         self.keypoints = [] 
         self.descriptors = [] 
+        self.labels = []
+        # for n in tqdm(range(0,self.num_images), total=self.num_images):
+        for img in tqdm(imgs, total=self.num_images):
+            # image = np.array(imagenet[n]['image'])
 
-        # self.get_images()
-        # for image in self.get_images():
-        for image in tqdm(self.bw_images):
+            # if len(image.shape) == 3:
+            #     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  
+            # self.labels.append(imagenet[n]["label"])
+            image = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
             img_keypoints, img_descriptors = extractor.detectAndCompute(image, None)
 
             if img_descriptors is not None:
+                self.keypoints.append(img_keypoints)
                 self.descriptors.append(img_descriptors)
         
-        sample_idx = np.random.randint(0, self.num_images, 100).tolist()
+        sample_idx = np.random.randint(0, self.num_images, sample_size).tolist()
 
+        print("Done Extracting now sampling")
         descriptors_sample = []
 
         for n in sample_idx:
@@ -107,6 +136,29 @@ class BOVW():
         self.labels = img_labels
         print(self.num_images)
 
+    def load_dataset_imagenet(self):
+        from datasets import load_dataset
+
+        imagenet = load_dataset(
+            'frgfm/imagenette',
+            'full_size',
+            split='train',
+        )        
+ 
+        self.num_images = len(imagenet)
+
+        def load_image():
+            for n in range(0,len(imagenet)):
+                # generate np arrays from the dataset images
+                img = np.array(imagenet[n]['image'])
+
+                if len(img.shape) == 3:
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+                yield img
+
+        self.bw_images = load_image()
+
     def load_vocab(self):
         k, vocab = joblib.load("bovw_vocab.pkl")
 
@@ -120,7 +172,10 @@ class BOVW():
                 # for each image, map each descriptor to the nearest codebook entry
                 img_visual_words, distance = vq(img_descriptors, self.vocab)
                 self.visual_words.append(img_visual_words)
-    
+
+        print(self.visual_words[0][:5], len(self.visual_words[0]))
+
+
     def get_sparse_frequency_vectors(self):
         frequency_vectors = []
         for img_visual_words in self.visual_words:
@@ -134,13 +189,31 @@ class BOVW():
         self.frequency_vectors = np.stack(frequency_vectors)
         self.frequency_vectors.shape
 
+        for i in [84,  22,  45, 172]:
+            print(f"{i}: {self.frequency_vectors[0][i]}")
+
+        print(self.frequency_vectors[0][:20])
+
+        #plt.bar(list(range(self.k)), self.frequency_vectors[0])
+        #plt.show()
+
     def tf_idf(self):
         df = np.sum(self.frequency_vectors > 0, axis=0)
-        print(df)
-        print(self.frequency_vectors.shape)
+
+        print(df.shape)
+        print(df[:5])
         idf = np.log(self.num_images/ df)
 
+        print(idf)
+        print(idf.shape)
+
         self.tfidf = self.frequency_vectors * idf
+
+        print(self.tfidf.shape)
+        print(self.tfidf[0][:5])
+
+        #plt.bar(list(range(self.k)), self.tfidf[0])
+        #plt.show()
 
     def search_img(self, img_num):
         a = self.tfidf[img_num]
@@ -152,74 +225,16 @@ class BOVW():
 
         for i in idx:
             print(f"{i}: {round(cosine_similarity[i], 4)}")
-            # plt.imshow(self.bw_images[i], cmap='gray')
-            # plt.show()
+            # #plt.imshow(self.bw_images[i], cmap='gray')
+            # #plt.show()
 
-    # def get_links(self):
-    #     self.links = []
-    #     for i,img in enumerate(self.frequency_vectors):
-    #         for j,comparison_img in enumerate(self.frequency_vectors):
-    #             if i != j:
-    #                 similar = self.compare_images(img, comparison_img)
-
-    #                 if similar > 50:
-    #                     self.links.append((i,j))
-    #                     print(f"Adding link between image {self.img_names[i]} and {self.img_names[j]}")
-
-    # def compare_images(self, img, comparison_img):
-    #     img1 = Counter(img)
-    #     img2 = Counter(comparison_img)
-    #     common_words = img1 & img2
-    #     print(common_words)
-    #     return sum(common_words.values())
-
-    def get_images(self):
-        self.data = pd.read_csv(f"{self.image_path}/images.csv")
-        img_names = [] 
-        self.num_images = self.data.shape[0]
-
-        for index, row in tqdm(self.data.iterrows(), total=self.data.shape[0]):
-            path = os.path.abspath(f"{self.image_path}/images/{row['key']}.jpg")
-            img_names.append(row['key'])
-            
-            yield cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-
-        self.img_names = img_names
-
-    # def get_images(self):
-    #     from datasets import load_dataset
-
-    #     imagenet = load_dataset(
-    #         'frgfm/imagenette',
-    #         'full_size',
-    #         split='train',
-    #     )        
-
-    #     # initialize list
-    #     images_training = []
-
-    #     for n in range(0,len(imagenet)):
-    #         # generate np arrays from the dataset images
-    #         images_training.append(np.array(imagenet[n]['image']))
-
-    #     bw_images = []
-    #     for img in images_training:
-    #         # if RGB, transform into grayscale
-    #         if len(img.shape) == 3:
-    #             bw_images.append(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
-    #         else:
-    #             # if grayscale, do not transform
-    #             bw_images.append(img)
-        
-    #     self.num_images = len(bw_images)
-    #     self.bw_images = bw_images
+   
 
 def main():
-    folder_path = os.path.abspath("data/raw")
-    print(folder_path)
-    bovw = BOVW(folder_path)
+    # folder_path = os.path.abspath("data/raw")
+    # print(folder_path)
+    bovw = BOVW("")
     bovw.create_vocab()
-    # bovw.search_img(1000)
 
 
 if __name__ == "__main__":
