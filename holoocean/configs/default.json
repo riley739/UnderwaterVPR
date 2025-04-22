@@ -1,0 +1,43 @@
+{
+    "log_dir": "logs",
+    "display_window": true,
+    "scenario": {
+        "name": "test_rgb_camera",
+        "world": "OpenWater",
+        "package_name": "Ocean",
+        "main_agent": "auv0",
+        "ticks_per_sec": 60,
+        "lcm_provider": "udpm://239.255.76.67:7667?ttl=0",
+        "agents": [
+            {
+                "agent_name": "auv0",
+                "agent_type": "HoveringAUV",
+                "sensors": [
+                    {
+                        "sensor_type": "RGBCamera",
+                        "socket": "DVLSocket",
+                        "Hz" : 5,
+                        "lcm_channel": "RGB",
+                        "configuration": {
+                            "CaptureWidth": 512,
+                            "CaptureHeight": 512
+                        },
+                        "rotation": [
+                            0,
+                            90,
+                            0
+                        ]
+                    },
+                    {
+                        "sensor_type": "PoseSensor",
+                        "socket": "DVLSocket",
+                        "lcm_channel": "Pose",
+                        "Hz": 5
+                    }
+                ],
+                "control_scheme": 1,
+                "location": [175, 60, -275]
+            }
+        ]
+    }
+}

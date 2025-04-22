@@ -1,0 +1,44 @@
+import os
+import random
+import shutil
+
+# Paths for main folder, destination folders
+main_folder = "/home/rbeh9716/Desktop/OpenVPRLab/data/train/tofua/Images(Copy)/val"
+
+database_folder = "/home/rbeh9716/Desktop/OpenVPRLab/data/train/tofua/Images(Copy)/val/db_images"
+query_folder = "/home/rbeh9716/Desktop/OpenVPRLab/data/train/tofua/Images(Copy)/val/q_images"
+
+# List all subfolders in the main folder
+all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
+
+
+# Create database and query subdirectories if they don't exist
+os.makedirs(database_folder, exist_ok=True)
+os.makedirs(query_folder, exist_ok=True)
+
+# Move files from each selected folder to 'database' and 'query' folders
+for folder in all_folders:
+    source_path = os.path.join(main_folder, folder)
+    
+    # List all files in the folder
+    files = [f for f in os.listdir(source_path) if os.path.isfile(os.path.join(source_path, f))]
+    
+    # Shuffle files to ensure random distribution between database and query folders
+    random.shuffle(files)
+    
+    # Calculate the halfway point to split the files
+    halfway_point = len(files) // 2
+    
+    # Move the first half of the files to the database folder
+    for file in files[:halfway_point]:
+        file_path = os.path.join(source_path, file)
+        shutil.move(file_path, os.path.join(database_folder, file))
+    
+    # Move the second half of the files to the query folder
+    for file in files[halfway_point:]:
+        file_path = os.path.join(source_path, file)
+        shutil.move(file_path, os.path.join(query_folder, file))
+    
+    print(f"Processed folder: {folder}")
+
+print("Process completed!")

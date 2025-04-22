@@ -1,0 +1,3 @@
+struct shutdown_t {
+    int64 timestamp;
+}

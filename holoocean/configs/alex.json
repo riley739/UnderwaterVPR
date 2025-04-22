@@ -1,0 +1,68 @@
+{
+    "log_dir": "logs",
+    "display_window": true,
+    "scenario": {
+        "name": "test_rgb_camera",
+        "world": "SonarLevelClear",
+        "package_name": "Alex",
+        "main_agent": "auv0",
+        "ticks_per_sec": 60,
+        "octree_min": 10.0,
+        "octree_max": 20.0,
+        "env_min" : [-10, -10, -10],
+        "env_max" : [10, 10, 10],
+        "lcm_provider": "udpm://239.255.76.67:7667?ttl=0",
+        "agents": [
+            {
+                "agent_name": "auv0",
+                "agent_type": "HoveringAUV",
+                "sensors": [
+                    {
+                        "sensor_type": "RGBCamera",
+                        "socket": "DVLSocket",
+                        "lcm_channel": "RGB",
+                        "Hz" : 5,
+                        "configuration": {
+                            "CaptureWidth": 512,
+                            "CaptureHeight": 512
+                        },
+                        "rotation": [
+                            0,
+                            90,
+                            0
+                        ]
+                    },
+                    {
+                        "sensor_type": "PoseSensor",
+                        "socket": "DVLSocket",
+                        "lcm_channel": "Pose",
+                        "Hz" : 10
+                    },
+                    {
+                        "sensor_type": "ImagingSonar",
+                        "socket": "SonarSocket",
+                        "Hz": 1,
+                        "lcm_channel": "ImagingSonar",
+                        "configuration": {
+                            "RangeBins": 512,
+                            "AzimuthBins": 512,
+                            "RangeMin": 1,
+                            "RangeMax": 10,
+                            "InitOctreeRange": 50,
+                            "Elevation": 30,
+                            "Azimuth": 60,
+                            "AzimuthStreaks": -1,
+                            "ScaleNoise": true,
+                            "AddSigma": 0.15,
+                            "MultSigma": 0.15,
+                            "RangeSigma": 0.2,
+                            "MultiPath": true,
+                            "ViewOctree": -1
+                        }
+                    }
+                ],
+                "control_scheme": 0
+            }
+        ]
+    }
+}
