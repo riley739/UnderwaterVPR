@@ -10,13 +10,13 @@ class MSLSValDataset(BaseValDataset):
 
         self.d_df, self.q_df = self.load_dataframes()
 
-    #TODO FIgure out if problem if same name 
-    def load_dataframes(self, path):
+    #TODO Figure out if problem if same name 
+    def load_dataframes(self):
 
-        database_cph = pd.read_csv(path  / "cph/database/postprocessed.csv")
-        database_sf = pd.read_csv(path  / "sf/database/postprocessed.csv")
-        query_cph = pd.read_csv(path  / "cph/query/postprocessed.csv")
-        query_sf = pd.read_csv(path  / "sf/query/postprocessed.csv")
+        database_cph = pd.read_csv(self.dataset_path  / "cph/database/postprocessed.csv")
+        database_sf = pd.read_csv(self.dataset_path  / "sf/database/postprocessed.csv")
+        query_cph = pd.read_csv(self.dataset_path  / "cph/query/postprocessed.csv")
+        query_sf = pd.read_csv(self.dataset_path  / "sf/query/postprocessed.csv")
 
         d_df = pd.concat([database_cph, database_sf], ignore_index=True)
         q_df = pd.concat([query_cph, query_sf], ignore_index=True)  

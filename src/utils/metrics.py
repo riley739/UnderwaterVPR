@@ -19,9 +19,7 @@ from rich import box
 
 def compute_recall_performance(
                 descriptors,
-                num_references,
-                num_queries,
-                ground_truth,
+                dataset,
                 k_values=[1, 5, 10],
     ):
     """
@@ -47,7 +45,7 @@ def compute_recall_performance(
         A dictionary mapping each 'K' value to its corresponding recall@K score.
     """
 
-    assert num_references + num_queries == len(
+    assert dataset.num_references + dataset.num_queries == len(
         descriptors
     ), "Number of references and queries do not match the number of descriptors. THERE IS A BUG!"
 
@@ -56,17 +54,17 @@ def compute_recall_performance(
     # faiss_index = faiss.IndexFlatIP(embed_size)
     
     # add references
-    faiss_index.add(descriptors[:num_references])
+    faiss_index.add(descriptors[:dataset.num_references])
 
     # search for queries in the index
-    _, predictions = faiss_index.search(descriptors[num_references:], max(k_values))
+    _, predictions = faiss_index.search(descriptors[dataset.num_references:], max(k_values))
 
     # start calculating recall_at_k
     correct_at_k = np.zeros(len(k_values))
     for q_idx, pred in enumerate(predictions):
         for i, n in enumerate(k_values):
             # if in top N then also in top NN, where NN > N
-            if np.any(np.in1d(pred[:n], ground_truth[q_idx])):
+            if dataset.is_correct(q_idx, pred[:n]):
                 correct_at_k[i:] += 1
                 break
 

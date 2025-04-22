@@ -19,6 +19,14 @@
 
 import torch
 
+DINOV2 = "Dinov2"
+RESNET50 = 'ResNet50'
+
+MODEL_URLS = {
+    f"{RESNET50}_16384": "https://github.com/amaralibey/Bag-of-Queries/releases/download/v1.0/resnet50_16384.pth",
+    f"{DINOV2}_12288": "https://github.com/amaralibey/Bag-of-Queries/releases/download/v1.0/dinov2_12288.pth",
+}
+
 class BoQBlock(torch.nn.Module):
     """
     BoQ Block

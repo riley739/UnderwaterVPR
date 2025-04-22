@@ -44,18 +44,27 @@ def create_model(config):
         aggregator=aggregator,
         config=config, # pass the config to the framework in order to save it
     )
+
+    
     
     return vpr_model
 
 def load_checkpoint(model, checkpoint_path):
-    #TODO Check it exists
-    if not os.path.exists(checkpoint_path):
-        raise FileNotFoundError(f"Checkpoint file not found at {checkpoint_path}")
-    # Load state_dict from the provided path
-    state_dict_path = checkpoint_path
-    if state_dict_path:
-        state_dict = torch.load(state_dict_path)
-        model.load_state_dict(state_dict['state_dict'])
+    #Check if the path is a local path else load via url
+    if  os.path.exists(checkpoint_path):
+        # Load state_dict from the provided path
+        state_dict_path = checkpoint_path
+        if state_dict_path:
+            state_dict = torch.load(state_dict_path)
+            model.load_state_dict(state_dict['state_dict'])
+    else:
+        model.load_state_dict(
+            torch.hub.load_state_dict_from_url(
+                checkpoint_path,
+                map_location=torch.device('cpu'),
+
+            ), strict=False
+        )    
 
 #TODO: Update to be able to use paths outside of data but for now its fine...
 #TODO: Since the train and val have differnet base datasets we should separate them out here
@@ -70,16 +79,9 @@ def get_dataset(name, config, dataset_type):
         "path": path,
         "config": config
     }
-    
-    dataset = get_instance("src.datasets", f"{name}{dataset_type.capitalize()}Dataset", params)
-
+    try:
+        dataset = get_instance("src.datasets", f"{name}{dataset_type.capitalize()}Dataset", params)
+    except AttributeError:
+        print("Dataset not found: Using default dataset")
+        dataset = get_instance("src.datasets", f"Base{dataset_type.capitalize()}Dataset", params)
     return dataset 
-
-    # if dataset_type == Types.TRAIN.value:
-        
-    
-    # elif dataset_type == Types.TEST.value:
-    
-    
-    # elif dataset_type == Types.VAL.value:
- 

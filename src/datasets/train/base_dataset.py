@@ -3,12 +3,7 @@ from pathlib import Path
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
-import torchvision.transforms as T
-
-default_transform = T.Compose([
-    T.ToTensor(),
-    T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
+from src.utils.transforms import default_transform
 
 # Now we can define the dataset class
 class BaseTrainDataset(Dataset):
@@ -60,17 +55,12 @@ class BaseTrainDataset(Dataset):
         # sample K images (rows) from this place
         # we can either sort and take the most recent k images
         # or randomly sample k images
-        if self.random_sample_from_each_place:
-            place = place.sample(n=self.img_per_place) 
-        else:  # always get the same most recent images
-            place = place.sort_values(
-                by=['year', 'month', 'lat'], ascending=False)
-            place = place[: self.img_per_place]
+        place = place.sample(n=self.img_per_place) 
             
         imgs = []
         for i, row in place.iterrows():
             img_name = self.get_img_name(row)
-            img_path = self.base_path / 'Images' / row['city_id'] / img_name
+            img_path = self.base_path / 'Images' /  img_name
             img = self.image_loader(img_path)
 
             if self.transform is not None:

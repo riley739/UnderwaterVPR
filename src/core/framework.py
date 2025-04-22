@@ -249,9 +249,7 @@ class Framework(L.LightningModule):
                 # meaning that the first `num_references` descriptors are reference images and the rest are query images
                 recalls_dict = compute_recall_performance(
                         descriptors, 
-                        dataset.num_references,
-                        dataset.num_queries,
-                        dataset.ground_truth,
+                        dataset,
                         k_values=[1, 5, 10, 15]
                 )
                 recalls_log = {

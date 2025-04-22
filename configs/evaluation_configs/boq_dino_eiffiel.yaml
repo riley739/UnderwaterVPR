@@ -1,0 +1,78 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2024 Amar Ali-bey
+# https://github.com/amaralibey/OpenVPRLab
+# Licensed under the MIT License. See LICENSE file in the project root.
+# ----------------------------------------------------------------------------
+
+
+#---------------------------------------------------
+# Datamodule Configuration
+#---------------------------------------------------
+datamodule:
+  train_set_name: "Tofua"
+  train_image_size: 
+    - 280
+    - 280
+  img_per_place: 4
+  batch_size: 10
+  num_workers: 8
+  val_image_size: 
+    - 322
+    - 322
+  val_set_names:
+    - "Eiffel"
+
+#---------------------------------------------------
+# VPR Model Configuration
+#---------------------------------------------------
+backbone:
+  model: DinoV2
+  params:
+    backbone_name: "dinov2_vitb14" # name of the vit backbone (see DinoV2.AVAILABLE_MODELS)
+    num_unfrozen_blocks: 2
+
+aggregator:
+  method: BoQ    # class name in the __init__.py file in the aggregators directory
+  params:
+    in_channels:  # if left blank we will use backbone.out_channels.
+    proj_channels: 384
+    num_queries: 64
+    num_layers: 2
+    row_dim: 32
+
+#---------------------------------------------------
+# Loss Function Configuration
+#---------------------------------------------------
+loss_function: 
+  class: VPRLossFunction
+  params:
+    loss_fn_name: "MultiSimilarityLoss"   # other possible values: "SupConLoss", "ContrastiveLoss", "TripletMarginLoss"
+    miner_name: "MultiSimilarityMiner"    # other possible values: "TripletMarginMiner", "PairMarginMiner"
+
+
+#---------------------------------------------------
+# Trainer Configuration
+#---------------------------------------------------
+trainer:
+  optimizer: adamw
+  learning_rate: 0.0002 
+  weight_decay: 0.001 
+  warmup: 3900    # linear warmup steps
+  max_epochs: 40
+  milestones:
+    - 10
+    - 20
+    - 30
+  lr_mult: 0.1 # learning rate multiplier at each milestone
+
+
+evaluation:
+  log_dir: "presentation"
+  checkpoint_path: "https://github.com/amaralibey/Bag-of-Queries/releases/download/v1.0/dinov2_12288.pth"
+  save_descriptors: True
+  recall_values: [1, 5, 10, 15, 20, 25]
+  use_labels: False
+  num_preds_to_save: 0
+  save_only_wrong_preds: False
+  descriptor_dimension: 12288
+  visualize_cameras: True 

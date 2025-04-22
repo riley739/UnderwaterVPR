@@ -72,7 +72,7 @@ def load(image):
     return np.array(img )
 
 
-img = load("/media/rbeh9716/Elements SE/i20240929_222820_cv/PR_20240930_083317_551_FC16.png")
+img = load("/home/rbeh9716/Desktop/UnderwaterVPR/data/train/Tofua/Images/PR_20240930_083156_389_FC16.png")
 
 feature_extractor = ViTFeatureExtractor.from_pretrained("facebook/dino-vits8", size=480)
 pixel_values = feature_extractor(images=img, return_tensors="pt").pixel_values 

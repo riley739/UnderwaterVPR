@@ -12,7 +12,7 @@ from src.utils.modules_manager import create_model, load_checkpoint
 from src.utils.config_manager import parse_args
 #TODO: Move into own folder
 from src.utils.visualize_places import save_preds
-from src.utils.visualize_cameras import save_cameras
+# from src.utils.visualize_cameras import save_cameras
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -117,11 +117,11 @@ def evaluate(config):
     # logger.info(recalls_str)
 
     correct_at_k = np.zeros(len(evaluation_params["recall_values"]))
-    gt = dataset.ground_truth
+    #TODO: THis neesd to be updated to use the dataset class
     for q_idx, pred in enumerate(predictions):
         for i, n in enumerate(evaluation_params["recall_values"]):
                 # if in top N then also in top NN, where NN > N
-                if np.any(np.in1d(pred[:n], gt[q_idx])):
+                if dataset.is_correct(q_idx, pred[:n]):
                     correct_at_k[i:] += 1
                     break
     correct_at_k = correct_at_k / len(predictions)
@@ -133,9 +133,9 @@ def evaluate(config):
     logger.info(table.get_string(title=f"Performance on {dataset.dataset_name}"))
 
 
-    #Save visualizations of camera positions
-    if evaluation_params["save_camera_positions"]:
-        save_cameras(dataset, log_dir)
+    # #Save visualizations of camera positions
+    # if evaluation_params["save_camera_positions"]:
+    #     save_cameras(dataset, log_dir)
     # Save visualizations of predictions
     if evaluation_params["num_preds_to_save"] != 0:
         logger.info("Saving final predictions")

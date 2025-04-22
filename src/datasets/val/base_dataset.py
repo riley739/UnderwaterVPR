@@ -2,19 +2,11 @@ from typing import Optional, Callable, Tuple, Any
 from pathlib import Path
 from torch.utils.data import Dataset
 import numpy as np
-import torchvision.transforms as T
+from src.utils.transforms import default_transform
 
 from PIL import Image
 
-
-
-default_transform = T.Compose([
-    T.ToTensor(),
-    T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
-
-
-
+#TODO: These should only use functions that can be overwritten in  child classes
 class BaseValDataset(Dataset):
     def __init__(
         self,
@@ -22,6 +14,8 @@ class BaseValDataset(Dataset):
         path,
         config
     ):
+        
+        #TODO This should be changed to come from config if given
         self.input_transform = default_transform
 
         self.dataset_name = name
@@ -48,15 +42,14 @@ class BaseValDataset(Dataset):
             tuple: (image, index) where image is a PIL image.
         """
         img_path = self.image_paths[index]
-        img = Image.open(self.dataset_path / img_path)
-
-        if return_path:
-            return img, return_path
-
+        img = Image.open(self.dataset_path / img_path).convert("RGB")
+        
         if self.input_transform:
             img = self.input_transform(img)
 
-       
+        if return_path:
+            return img, return_path
+        
         return img, index, 
 
     def __len__(self) -> int:
@@ -68,3 +61,11 @@ class BaseValDataset(Dataset):
 
     def set_transform(self, transform):
         self.input_transform = transform
+
+    def is_correct(self, index: int, predictions) -> bool:
+        label = self.ground_truth[index]
+        if np.any(np.in1d(predictions, label)):
+            return True
+        return False
+    
+    

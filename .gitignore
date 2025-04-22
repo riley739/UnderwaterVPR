@@ -4,3 +4,10 @@ gnn/logs/
 visualization/docs/
 visualization/inputs/
 logs/
+*/*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.png
+*.jpg

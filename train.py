@@ -12,7 +12,7 @@ from lightning.pytorch.callbacks import RichProgressBar, ModelCheckpoint
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 from lightning.pytorch.loggers import TensorBoardLogger
 from src.core.datamodule import DataModule
-from src.utils.modules_manager import create_model
+from src.utils.modules_manager import create_model, load_checkpoint
 from src.utils.config_manager import parse_args
 
 from rich.traceback import install
@@ -32,6 +32,10 @@ def train(config):
     datamodule = DataModule(config["datamodule"])
 
     vpr_model = create_model(config)
+    
+    #TODO: Load checkpoint of model
+    # if config["model"]["checkpoint"]:
+    #     load_checkpoint(vpr_model, "https://github.com/amaralibey/Bag-of-Queries/releases/download/v1.0/dinov2_12288.pth")
 
     if config["compile"]:
         vpr_model = torch.compile(vpr_model)
@@ -56,10 +60,11 @@ def train(config):
     #TODO: UPDate this to come from config
     checkpoint_cb = ModelCheckpoint(
         monitor=config["datamodule"]["val_set_names"][0] + "/R1",
-        filename="epoch({epoch:02d})_step({step:04d})_R1[{eiffel/R1:.4f}]_R5[{eiffel/R5:.4f}]",
+        filename="epoch({epoch:02d})_step({step:04d})_R1[{holoocean/R1:.4f}]_R5[{holoocean/R5:.4f}]",
         auto_insert_metric_name=False,
         save_weights_only=False,
         save_top_k=3,
+        save_last=True,
         mode="max",
     )
     

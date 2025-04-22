@@ -31,6 +31,7 @@ URL: https://arxiv.org/abs/2210.10239
 """
 
 import pandas as pd
+import torch
 from src.datasets.train.base_dataset import BaseTrainDataset
 
 # Now we can define the dataset class
@@ -72,6 +73,38 @@ class GSVCitiesTrainDataset(BaseTrainDataset):
         df = df[df.groupby('place_id')['place_id'].transform('size') >= self.img_per_place]
         return df.set_index('place_id')
         
+    def __getitem__(self, index):
+        place_id = self.places_ids[index]
+        
+        # get the place in form of a dataframe (each row corresponds to one image)
+        place = self.dataframe.loc[place_id]
+        
+        # sample K images (rows) from this place
+        # we can either sort and take the most recent k images
+        # or randomly sample k images
+        if self.random_sample_from_each_place:
+            place = place.sample(n=self.img_per_place) 
+        else:  # always get the same most recent images
+            place = place.sort_values(
+                by=['year', 'month', 'lat'], ascending=False)
+            place = place[: self.img_per_place]
+            
+        imgs = []
+        for i, row in place.iterrows():
+            img_name = self.get_img_name(row)
+            img_path = self.base_path / 'Images' / row['city_id'] / img_name
+            img = self.image_loader(img_path)
+
+            if self.transform is not None:
+                img = self.transform(img)
+            imgs.append(img)
+
+        # NOTE: contrary to image classification where __getitem__ returns only one image 
+        # in GSVCities, we return a place, which is a Tesor of K images (K=self.img_per_place)
+        # this will return a Tensor of shape [K, channels, height, width]. This needs to be taken into account 
+        # in the Dataloader (which will yield batches of shape [BS, K, channels, height, width])
+        return torch.stack(imgs), torch.tensor(place_id).repeat(self.img_per_place)
+    
     @staticmethod
     def get_img_name(row):
         """
