@@ -46,3 +46,10 @@ def simulation(config):
         
         if "PoseSensor" in state:
             trajectory.save_pose(state)
+
+            rotation = state["PoseSensor"][:3, :3]
+            location = state["PoseSensor"][:3, 3]
+
+
+            env.move_viewport([location[0],location[1],location[2]], [0, 0, 90])
+            print(f"Moving to {location} with {rotation}")
