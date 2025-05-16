@@ -17,6 +17,7 @@ from visualize_temp import save_preds
 import sys
 from datetime import datetime
 from pathlib import Path
+import cv2
 
 import faiss
 import numpy as np
@@ -112,10 +113,10 @@ def get_correct(predictions, dataset, pose, theshold = 1):
     
     for pred in predictions[0]:
         try:
-            correct.append(dataset.is_correct(pred, pose, theshold))
+            correct.append(dataset.is_correct(pred, pose, theshold, True))
         # IF not associated pose just assume its wrong
         except:
-            correct.append(False)   
+            correct.append((False, 0))   
     return correct
 
 # This is called when the train mode is selected
@@ -157,9 +158,7 @@ def evaluate(config):
             correct = get_correct(predictions, dataset, pose, threshold)
             img = save_preds(predictions, correct, dataset, log_dir, img, count)
             count += 1
-            
-            cv2.imshow(img)
-            cv2.waitKey(5)
+
 
 
 if __name__ == "__main__":
