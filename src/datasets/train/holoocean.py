@@ -34,7 +34,7 @@ class HoloOceanTrainDataset(BaseTrainDataset):
             This requiers DataFrame files to be in a folder
             named Dataframes
         '''
-        df = pd.read_csv(self.base_path /'holoocean.csv')
+        df = pd.read_csv(self.base_path /'Dataframes/Database.csv')
        
         self.coords =  df[['x', 'y', 'z']].to_numpy()
         # keep only places depicted by at least img_per_place images
@@ -60,7 +60,7 @@ class HoloOceanTrainDataset(BaseTrainDataset):
         imgs = []
         for idx in nearby_idxs:
             row = self.dataframe.iloc[idx]
-            img_path = self.base_path / 'Images' /  row['name']  # make sure 'image_path' exists
+            img_path = self.base_path / 'Images' /  "Database" / row['name']  # make sure 'image_path' exists
             img = self.image_loader(img_path)
             if self.transform:
                 img = self.transform(img)

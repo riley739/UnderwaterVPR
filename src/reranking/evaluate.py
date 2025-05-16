@@ -84,7 +84,7 @@ def setup_model(config):
 
     return model, datamodule
 
-def load_database_descriptors(model, dataset, config):
+def load_descriptors(model, dataset, config):
 
 
     logger.info(f"Testing on {dataset}")
@@ -96,15 +96,17 @@ def load_database_descriptors(model, dataset, config):
     #TODO: Move from val to test datasets here... 
     #TODO: Split into database and query datasets... 
 
-    logger.debug("Extracting database descriptors for evaluation/testing")
+    logger.debug("Extracting descriptors for evaluation/testing")
     #TODO: Check if passing the all_descriptors as key value ruins the speed up of creating the nump array 
     all_descriptors = np.empty((len(dataset), config["evaluation"]["descriptor_dimension"]), dtype="float32")
     all_descriptors = get_descriptors(model, all_descriptors, database_dataloader, config["device"])
 
+    query_descriptors = all_descriptors[dataset.num_references :]
     database_descriptors = all_descriptors[: dataset.num_references]
 
-    return database_descriptors
+    return query_descriptors, database_descriptors
 
+    
 
 def get_correct(predictions, dataset, pose, theshold = 1):
 
@@ -127,42 +129,46 @@ def evaluate(config):
 
     model, datamodule = setup_model(config)
 
-    #TODO WOrk with multiple datasets e.g. append them 
+    #TODO Work with multiple datasets e.g. append them 
     dataset = datamodule.get_datasets("test")[0]
-    database_descriptors = load_database_descriptors(model, dataset, config )
+    query_descriptors, database_descriptors = load_descriptors(model, dataset, config )
+
     
+    torch.save(query_descriptors, "queries.pt")
+    torch.save(database_descriptors, "database.pt")
+
+
+    
+
+
     # Use a kNN to find predictions
     faiss_index = faiss.IndexFlatL2(config["evaluation"]["descriptor_dimension"])
     faiss_index.add(database_descriptors)
-    del database_descriptors
+
+    logger.debug("Calculating recalls")
+    _, predictions = faiss_index.search(query_descriptors, max(config["evaluation"]["recall_values"]))
+    correct_at_k = np.zeros(len(config["evaluation"]["recall_values"]))
+
+    _, predictions = faiss_index.search(query_descriptors, max(config["evaluation"]["recall_values"]))
+
+    for q_idx, pred in enumerate(predictions):
+        for i, n in enumerate(config["evaluation"]["recall_values"]):
+                # if in top N then also in top NN, where NN > N
+                if dataset.is_correct(q_idx, pred[:n]):
+                    correct_at_k[i:] += 1
+                    break
+    correct_at_k = correct_at_k / len(predictions)
+    d = {k:v for (k,v) in zip(config["evaluation"]["recall_values"], correct_at_k)}
+
+    table = PrettyTable()
+    table.field_names = ['K']+[str(k) for k in config["evaluation"]["recall_values"]]
+    table.add_row(['Recall@K']+ [f'{100*v:.2f}' for v in correct_at_k])
+    logger.info(table.get_string(title=f"Performance on {dataset.dataset_name}"))
 
 
-    receiver = LCMImageReceiver()
-    receiver.start_background_thread()
+    # topk = q_idx in query_descp -> database_vectors[pred[:k]]
 
-    count = 0 
-    while True:
-        img = receiver.get_latest_image()
-        if img is not None:
-            pose = receiver.get_latest_pose() #TODO : This should line up relatively well but should be checked as pose and camera are sent differently , pose is more common tho so should give relatively accurate estimation
-            img_tensor = val_transform(img).unsqueeze(0)
-            query_descriptor = get_descriptor(model, img_tensor, config["device"])
-
-            logger.debug("Calculating recalls")
-            _, predictions = faiss_index.search(query_descriptor, max(config["evaluation"]["recall_values"]))
-
-            predictions = predictions[:, : config["evaluation"]["num_preds_to_save"]]
-
-            threshold = 5
-            correct = get_correct(predictions, dataset, pose, threshold)
-            img = save_preds(predictions, correct, dataset, log_dir, img, count)
-            count += 1
-            
-            cv2.imshow(img)
-            cv2.waitKey(5)
-
-
-if __name__ == "__main__":
+def rerank():
     config = parse_args()
     
     evaluate(config)

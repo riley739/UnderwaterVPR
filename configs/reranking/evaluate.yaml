@@ -9,7 +9,7 @@
 # Datamodule Configuration
 #---------------------------------------------------
 datamodule:
-  train_set_name: "Tofua"
+  train_set_name: "Rerank"
   train_image_size: 
     - 280
     - 280
@@ -20,7 +20,9 @@ datamodule:
     - 322
     - 322
   val_set_names:
-    - "holoocean"
+    - "Rerank"
+  test_set_names:
+    - "HoloOceanRerank"  
 
 #---------------------------------------------------
 # VPR Model Configuration
@@ -70,7 +72,7 @@ evaluation:
   log_dir: "logs"
   checkpoint_path: "https://github.com/amaralibey/Bag-of-Queries/releases/download/v1.0/dinov2_12288.pth"
   save_descriptors: True
-  recall_values: [1, 5, 10, 15, 20, 25]
+  recall_values: [1, 5, 10, 25]
   use_labels: False
   num_preds_to_save: 3
   save_only_wrong_preds: False

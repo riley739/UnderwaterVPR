@@ -33,7 +33,6 @@ def train(config):
 
     vpr_model = create_model(config)
     
-    #TODO: Load checkpoint of model
     # if config["model"]["checkpoint"]:
     #     load_checkpoint(vpr_model, "https://github.com/amaralibey/Bag-of-Queries/releases/download/v1.0/dinov2_12288.pth")
 

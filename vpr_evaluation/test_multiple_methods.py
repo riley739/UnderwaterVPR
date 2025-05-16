@@ -36,12 +36,12 @@ def main(args):
     model = model.eval().to(args.device)
     
     database_folder = np.load(args.database_folder).tolist()
-    # q_folder = np.load(args.queries_folder).tolist()
+    q_folder = np.load(args.queries_folder).tolist()
 
 
     test_ds = TestDataset(
         database_folder,
-        args.queries_folder,
+        q_folder,
         positive_dist_threshold=args.positive_dist_threshold,
         image_size=args.image_size,
         use_labels=args.use_labels,
@@ -55,6 +55,7 @@ def main(args):
             dataset=database_subset_ds, num_workers=args.num_workers, batch_size=args.batch_size
         )
         all_descriptors = np.empty((len(test_ds), args.descriptors_dimension), dtype="float32")
+        
         for images, indices in tqdm(database_dataloader):
             descriptors = model(images.to(args.device))
             descriptors = descriptors.cpu().numpy()
@@ -87,49 +88,49 @@ def main(args):
     _, predictions = faiss_index.search(queries_descriptors, max(args.recall_values))
 
     logger.debug(predictions)
-    # # For each query, check if the predictions are correct
-    # if args.use_labels:
-    #     positives_per_query = test_ds.get_positives()
-    #     recalls = np.zeros(len(args.recall_values))
-    #     for query_index, preds in enumerate(predictions):
-    #         for i, n in enumerate(args.recall_values):
-    #             if np.any(np.in1d(preds[:n], positives_per_query[query_index])):
-    #                 recalls[i:] += 1
-    #                 break
+    # For each query, check if the predictions are correct
+    if args.use_labels:
+        positives_per_query = test_ds.get_positives()
+        recalls = np.zeros(len(args.recall_values))
+        for query_index, preds in enumerate(predictions):
+            for i, n in enumerate(args.recall_values):
+                if np.any(np.in1d(preds[:n], positives_per_query[query_index])):
+                    recalls[i:] += 1
+                    break
 
-    #     # Divide by num_queries and multiply by 100, so the recalls are in percentages
-    #     recalls = recalls / test_ds.num_queries * 100
-    #     recalls_str = ", ".join([f"R@{val}: {rec:.1f}" for val, rec in zip(args.recall_values, recalls)])
-    #     logger.info(recalls_str)
+        # Divide by num_queries and multiply by 100, so the recalls are in percentages
+        recalls = recalls / test_ds.num_queries * 100
+        recalls_str = ", ".join([f"R@{val}: {rec:.1f}" for val, rec in zip(args.recall_values, recalls)])
+        logger.info(recalls_str)
 
     # groun_truths = np file 
     
-    # correct_at_k = np.zeros(len(args.recall_values))
-    # gt = np.load(args.ground_truth_folder, allow_pickle=True)
-    # for q_idx, pred in enumerate(predictions):
-    #     for i, n in enumerate(args.recall_values):
-    #             # if in top N then also in top NN, where NN > N
-    #             if np.any(np.in1d(pred[:n], gt[q_idx])):
-    #                 correct_at_k[i:] += 1
-    #                 break
-    # correct_at_k = correct_at_k / len(predictions)
-    # d = {k:v for (k,v) in zip(args.recall_values, correct_at_k)}
+    correct_at_k = np.zeros(len(args.recall_values))
+    gt = np.load(args.ground_truth_folder, allow_pickle=True)
+    for q_idx, pred in enumerate(predictions):
+        for i, n in enumerate(args.recall_values):
+                # if in top N then also in top NN, where NN > N
+                if np.any(np.in1d(pred[:n], gt[q_idx])):
+                    correct_at_k[i:] += 1
+                    break
+    correct_at_k = correct_at_k / len(predictions)
+    d = {k:v for (k,v) in zip(args.recall_values, correct_at_k)}
 
 
-    # table = PrettyTable()   
-    # table.field_names = ['K']+[str(k) for k in args.recall_values]
-    # table.add_row(['Recall@K']+ [f'{100*v:.2f}' for v in correct_at_k])
-    # logger.info(table.get_string(title=f"Performance "))
+    table = PrettyTable()   
+    table.field_names = ['K']+[str(k) for k in args.recall_values]
+    table.add_row(['Recall@K']+ [f'{100*v:.2f}' for v in correct_at_k])
+    logger.info(table.get_string(title=f"Performance "))
 
-    # logger.info(correct_at_k)
+    logger.info(correct_at_k)
     
-    # plt.figure(figsize=(8, 6))
-    # plt.plot(args.recall_values, correct_at_k, marker='o')
-    # plt.xlabel('K')
-    # plt.ylabel('Recall@K')
-    # plt.title('Recall@K')
-    # plt.grid(True)
-    # plt.savefig(log_dir / 'recall_at_k_plot.png')
+    plt.figure(figsize=(8, 6))
+    plt.plot(args.recall_values, correct_at_k, marker='o')
+    plt.xlabel('K')
+    plt.ylabel('Recall@K')
+    plt.title('Recall@K')
+    plt.grid(True)
+    plt.savefig(log_dir / 'recall_at_k_plot.png')
 
 
     # Save visualizations of predictions
@@ -168,13 +169,13 @@ methods = [
     #     "log_dir" : "results"
     # },
 
-    {
-        "method" : "boq",
-        "backbone": "Dinov2",
-        "descriptors_dimension" : 12288,
-        "image_size" : [322,322],
-        "log_dir" : "images"
-    },
+    # {
+    #     "method" : "boq",
+    #     "backbone": "Dinov2",
+    #     "descriptors_dimension" : 12288,
+    #     "image_size" : [322,322],
+    #     "log_dir" : "images"
+    # },
 
 
     # {
@@ -192,12 +193,13 @@ methods = [
     #     "log_dir" : "results"
     # },
 
-    # {
-    #     "method" : "netvlad",
-    #     "descriptors_dimension" : 32768,
-    #     "backbone": "ResNet18",
-    #     "log_dir" : "results"
-    # },  
+    {
+        "method" : "netvlad",
+        "descriptors_dimension" : 32768,
+        "backbone": "ResNet18",
+        
+        "log_dir" : "results"
+    },  
 
 ]
 
@@ -232,10 +234,11 @@ if __name__ == "__main__":
         # main(args)
 
         
-        args.log_dir = method["log_dir"] + "/cross_view"
-        args.database_folder = "/home/rbeh9716/Desktop/UnderwaterVPR/data/val/Tofua/db_images.npy"
-        args.queries_folder = "/home/rbeh9716/Desktop/TongaProject/Datasets/data/GX010061/Frames"
-        args.ground_truth_folder = "/home/rbeh9716/Desktop/UnderwaterVPR/data/val/Eiffel_subset/gt.npy" 
+        args.log_dir = method["log_dir"] + "/holoocean"
+        args.database_folder = "/home/rbeh9716/Desktop/UnderwaterVPR/data/val/holoocean/db_images.npy"
+        args.queries_folder = "/home/rbeh9716/Desktop/UnderwaterVPR/data/val/holoocean/q_images.npy"
+        args.ground_truth_folder = "/home/rbeh9716/Desktop/UnderwaterVPR/data/val/holoocean/gt.npy"
+        args.image_size = [640,480]
     
 
         main(args)

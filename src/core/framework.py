@@ -12,7 +12,7 @@ import lightning as L
 import torch.nn.functional as F
 from torchvision import transforms as T
 from torchvision.transforms import v2 as T2
-from src.utils.metrics import compute_recall_performance, display_recall_performance
+from src.utils.metrics import compute_recall_performance, display_recall_performance, compute_recall_rerank
 
 class Framework(L.LightningModule):
     def __init__(
@@ -38,6 +38,10 @@ class Framework(L.LightningModule):
         self.milestones = training_params["milestones"]
         self.lr_mult = training_params["lr_mult"]
         self.verbose = training_params.get("verbose", True)
+
+        from src.losses.aploss import APLoss
+
+        self.loss_fnc = APLoss().to(config["device"])
         
         # save the hyperparameters except the classes
         # self.save_hyperparameters(ignore=["loss_function", "backbone", "aggregator", "verbose"])
@@ -56,6 +60,8 @@ class Framework(L.LightningModule):
         # incoming is [images_per_place * batch_size, 3, w,h]
         x = self.backbone(x)
         x = self.aggregator(x)
+
+
         return x
     
     def configure_optimizers(self):
@@ -157,24 +163,36 @@ class Framework(L.LightningModule):
         Returns:
             Loss value for the batch.
         """
-        images, labels = batch
-        P, K, c, h, w = images.shape # P: number of places, K: number of views
-        images = images.view(P * K, c, h, w) # so B = P * K 
-        labels = labels.view(-1)
-        
-        model_output = self(images)
-        
-        # sometimes the model returns a list, sometimes a single tensor
-        # for example, BoQ returns (descriptors, attentions)
-        # but netvlad, mixvpr and many others return only descriptors
-        # so we check if the model output is a list or a single tensor
-        if isinstance(model_output, tuple) or isinstance(model_output, list):
-            descriptors = model_output[0]
-        else:
-            descriptors = model_output
-        
-        loss, batch_accuracy = self.compute_loss(descriptors, labels)
+        #TODO: Update this better
+        try:
+            images, labels = batch
+            P, K, c, h, w = images.shape # P: number of places, K: number of views
+            images = images.view(P * K, c, h, w) # so B = P * K 
+            labels = labels.view(-1)
+            
+            model_output = self(images)
 
+        
+            # sometimes the model returns a list, sometimes a single tensor
+            # for example, BoQ returns (descriptors, attentions)
+            # but netvlad, mixvpr and many others return only descriptors
+            # so we check if the model output is a list or a single tensor
+            if isinstance(model_output, tuple) or isinstance(model_output, list):
+                descriptors = model_output[0]
+            else:
+                descriptors = model_output
+            
+            loss, batch_accuracy = self.compute_loss(descriptors, labels[:, : 100 + 1])
+
+        except ValueError:
+            descs, labels, affs, _ = batch
+
+            model_output = self((descs, affs))
+            sim = model_output[:, 0].unsqueeze(1) @ model_output.transpose(1, 2)
+
+            loss, batch_accuracy = self.compute_loss(sim.squeeze(1), labels[:, : 100 + 1])
+
+        
         self.log("loss", loss, prog_bar=True, logger=True)
         self.log("batch_acc", batch_accuracy, prog_bar=True, logger=True)
         return loss
@@ -208,19 +226,36 @@ class Framework(L.LightningModule):
         Returns:
             None
         """
-        images, labels = batch
-        model_output = self(images)
-        
-        # sometimes the model returns a list, sometimes a single tensor
-        # for example, BoQ returns [descriptors, attentions]
-        # but netvlad, mixvpr and many others return only descriptors
-        # so we check if the model output is a list or a single tensor
-        if isinstance(model_output, tuple) or isinstance(model_output, list):
-            descriptors = model_output[0]
-        else:
-            descriptors = model_output
+
+        try:
+            images, labels = batch
+            model_output = self(images)
             
-        descriptors = descriptors.detach().cpu().numpy()
+            # sometimes the model returns a list, sometimes a single tensor
+            # for example, BoQ returns [descriptors, attentions]
+            # but netvlad, mixvpr and many others return only descriptors
+            # so we check if the model output is a list or a single tensor
+            if isinstance(model_output, tuple) or isinstance(model_output, list):
+                descriptors = model_output[0]
+            else:
+                descriptors = model_output
+
+            descriptors = descriptors.detach().cpu().numpy()
+
+
+        except:
+            descs, labels, affs, db_idx = batch
+
+            model_output = self((descs, affs))
+            descriptors = model_output[:, 0].unsqueeze(1) @ model_output.transpose(1, 2)
+            topk = torch.topk(descriptors.squeeze(1), 25).indices
+
+
+            labels = torch.gather(db_idx, 1, topk) 
+
+            labels = labels.detach().cpu()
+
+            descriptors = labels
 
         if dataloader_idx not in self.validation_step_outputs:
             # initialize the list of descriptors for this dataloader
@@ -238,7 +273,7 @@ class Framework(L.LightningModule):
         for dataloader_idx, descriptors_list in self.validation_step_outputs.items():
             descriptors = np.concatenate(descriptors_list, axis=0)
             dataset = dm.val_datasets[dataloader_idx]
-
+                
             if self.trainer.fast_dev_run:
                 # skip the recall computation for fast dev runs
                 if dataloader_idx == 0:
@@ -247,11 +282,18 @@ class Framework(L.LightningModule):
                 # we will use the descriptors, the number of references, number of queries, and the ground truth
                 # NOTE: make sure these are available in the dataset object and ARE IN THE RIGHT ORDER.
                 # meaning that the first `num_references` descriptors are reference images and the rest are query images
-                recalls_dict = compute_recall_performance(
-                        descriptors, 
-                        dataset,
-                        k_values=[1, 5, 10, 15]
-                )
+                try:
+                    recalls_dict = compute_recall_performance(
+                            descriptors, 
+                            dataset,
+                            k_values=[1, 5, 10, 15, 25]
+                    )
+                except:
+                    recalls_dict = compute_recall_rerank(
+                            descriptors, 
+                            dataset,
+                            k_values=[1, 5, 10, 15, 25]
+                    )
                 recalls_log = {
                     f"{dm.val_set_names[dataloader_idx]}/R1": recalls_dict[1],
                     f"{dm.val_set_names[dataloader_idx]}/R5": recalls_dict[5],

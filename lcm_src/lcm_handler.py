@@ -4,21 +4,28 @@ from PIL import Image
 import threading
 
 from lcm_src.messages.RGBCamera import RGBCamera
+from lcm_src.messages.PoseSensor import PoseSensor  # Adjust this to your actual message name
 
 class LCMImageReceiver:
-    def __init__(self, topic="RGB"):
+    def __init__(self, image_topic="RGB", pose_topic="Pose"):
         self.lcm_instance = lcm.LCM()
-        self.topic = topic
+        self.image_topic = image_topic
+        self.pose_topic = pose_topic
+
         self.latest_image = None
+        self.latest_pose = None
         self.lock = threading.Lock()
 
-        self.lcm_instance.subscribe(self.topic, self._handler)
+        self.lcm_instance.subscribe(self.image_topic, self._image_handler)
+        self.lcm_instance.subscribe(self.pose_topic, self._pose_handler)
 
-    def _handler(self, channel, msg):
+    def _image_handler(self, channel, msg):
         decoded = RGBCamera.decode(msg)
         try:
             img = np.array(decoded.image, dtype=np.uint8).reshape((decoded.height, decoded.width, decoded.channels))
-            img = Image.fromarray(img).convert("RGB")
+            img = img[:, :, :3]      # Drop alpha
+            img = img[..., ::-1]     # Convert RGBA → BGR → RGB
+            img = Image.fromarray(img)
 
             with self.lock:
                 self.latest_image = img
@@ -26,11 +33,23 @@ class LCMImageReceiver:
         except Exception as e:
             print(f"[LCMImageReceiver] Error decoding image: {e}")
 
+    def _pose_handler(self, channel, msg):
+        try:
+            decoded = PoseSensor.decode(msg).matrix
+            with self.lock:
+                self.latest_pose = [decoded[0][-1], decoded[1][-1], decoded[2][-1]]
+        except Exception as e:
+            print(f"[LCMImageReceiver] Error decoding pose: {e}")
+
     def get_latest_image(self):
         with self.lock:
             img = self.latest_image
             self.latest_image = None
         return img
+
+    def get_latest_pose(self):
+        with self.lock:
+            return self.latest_pose  # Do not clear pose unless you want one-shot access
 
     def handle_once(self, timeout_ms=None):
         if timeout_ms is not None:

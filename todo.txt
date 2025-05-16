@@ -1,7 +1,121 @@
-Add cudasift Wrapper
-Add VLAD And BOGVW
-Add visualization
-fix loss functions
-fix framework/trainer
-fix the utils
-Update how data works aye
+How to interface the VPR with the simulation of lcm 
+
+For now just worry about case with database already known
+Create new dataset:
+	Just have database -> images with respective poses 
+	Calculate database descriptors 
+	Handle incoming images in a buffer
+	With incoming image Get descriptors and get top 3 candidates
+	border them green if correct and red otherwise based on pose.
+	
+	New lcm message that contains image and pose of image.
+	
+	
+If database not known:
+	Update incrementally
+	How to pass pose + image -> probs add timestamp to images and get closest one perhaps? 
+	
+	
+
+ALSO how to determine if no images are matched / similarity score
+
+
+Then Start creating own methods / Working on lit review / marking / working on pem :D
+
+
+Need to display images now then if they are wrong or correct (not as important) 
+Clean integration between parts
+
+Working just need to visualize the output atm 
+
+
+TODO:
+	Integrate better together
+	Visualise  output as part of vpr inference - with correct / incorrect labels 
+		Send pose as well to determine if correct match then label output
+	Viewpoint working e.g. moving the camera
+	practice run with real world maybe create world from unreal 
+	Mainly marking
+
+	This get done today
+
+	Tmrw look into geting training working -> purely visual and then sonar data 
+    
+
+
+Seems to be an issue with how the trianing is implemented will try again but looks not promising
+will need to figure out better way to train it i guess
+
+Integrating sonar data 
+how to get likelihood e.g. when it doesn';t match anything 
+do own message
+
+got it working with places but not with distance 
+
+
+#TODO: As different hights can be different coordinate but still see same thing so some issues with that that need to be addressed
+
+
+
+
+Uncertainty:
+Aleoteric uncertainty baked into the matching?  Or use Sota method such as - On the Estimation of Image-matching Uncertainty in Visual Place Recognition
+
+
+Lets just try to get basic pipeline running
+
+features coming from dinov2 -> concat with sonar features into gnn and then see how that goes... 
+
+
+
+
+Basic pipeline
+
+
+Train Dataset -> DinoV2 -> Visual Descriptors -> Simple way to get global values -> compare and rank -> 
+Sonar dataset -> sonar descriptors -> 
+
+
+https://arxiv.org/pdf/2103.06638 -> overlap to see if images are from same place... better then pure x and y locations
+
+
+I think I can be smart about how I train it and train them at the same time but for first parse it might be better to just calculate all 
+
+
+
+Today:
+	Add affinities:
+        Load query and db positions from database
+        can do same with headings
+        Then compare and append them togther 
+
+
+    Add fov overlap and compare with places:
+        - Do this with the current placement method and see how well it performs and then the same with the new fov method. (I do kindve like this one).
+
+	create better pipeline:
+        - Clean up the whole pipeline so its much easier to use / clean diff between normal and reranking 
+
+    
+	create sonar datasets:
+        - Create basic sonar dataset, concat them together and see how that performs verse doing it with affinities.
+
+	Try better way of adding graph network:
+        - E.g. descriptors as nodes and affinities as edges? 
+
+           
+	Honestly then should be good enough to do quick demo for presentation
+	Message stef about meeting for this time next week :D 
+	
+
+See why we need the query value in there 
+
+Then add the heading values 
+
+Then test on pose with the simulator
+
+Then add with sonar data
+
+Then find way of extracting cnn data
+
+hopefully still produces ok data... 

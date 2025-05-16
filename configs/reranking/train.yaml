@@ -9,7 +9,7 @@
 # Datamodule Configuration
 #---------------------------------------------------
 datamodule:
-  train_set_name: "Tofua"
+  train_set_name: "HoloOceanRerank"
   train_image_size: 
     - 280
     - 280
@@ -20,25 +20,32 @@ datamodule:
     - 322
     - 322
   val_set_names:
-    - "holoocean"
+    - "Rerank"
+  test_set_names:
+    - "Rerank"
 
 #---------------------------------------------------
 # VPR Model Configuration
 #---------------------------------------------------
 backbone:
-  model: DinoV2
-  params:
-    backbone_name: "dinov2_vitb14" # name of the vit backbone (see DinoV2.AVAILABLE_MODELS)
-    num_unfrozen_blocks: 2
+  model: Default
+  params: []
+
 
 aggregator:
-  method: BoQ    # class name in the __init__.py file in the aggregators directory
-  params:
-    in_channels:  # if left blank we will use backbone.out_channels.
-    proj_channels: 384
-    num_queries: 64
-    num_layers: 2
-    row_dim: 32
+  method: GNN
+  params: 
+    input_dim: 12288
+    proj_dim: 512
+    output_dim: 768
+    K: 100
+    L: 100
+    num_layers: 1
+    num_heads: 12
+    affinity: ["positional"]
+    input_dropout: 0.2
+    attn_dropout: 0.2
+    aff_dim: 100 
 
 #---------------------------------------------------
 # Loss Function Configuration
@@ -46,8 +53,8 @@ aggregator:
 loss_function: 
   class: VPRLossFunction
   params:
-    loss_fn_name: "MultiSimilarityLoss"   # other possible values: "SupConLoss", "ContrastiveLoss", "TripletMarginLoss"
-    miner_name: "MultiSimilarityMiner"    # other possible values: "TripletMarginMiner", "PairMarginMiner"
+    loss_fn_name: "APLoss"   # other possible values: "SupConLoss", "ContrastiveLoss", "TripletMarginLoss"
+    miner_name: #"MultiSimilarityMiner"    # other possible values: "TripletMarginMiner", "PairMarginMiner"
 
 
 #---------------------------------------------------

@@ -26,19 +26,24 @@ datamodule:
 # VPR Model Configuration
 #---------------------------------------------------
 backbone:
-  model: DinoV2
+  model: Default
   params:
     backbone_name: "dinov2_vitb14" # name of the vit backbone (see DinoV2.AVAILABLE_MODELS)
     num_unfrozen_blocks: 2
 
 aggregator:
-  method: BoQ    # class name in the __init__.py file in the aggregators directory
+  method: GNN    # class name in the __init__.py file in the aggregators directory
   params:
-    in_channels:  # if left blank we will use backbone.out_channels.
-    proj_channels: 384
-    num_queries: 64
-    num_layers: 2
-    row_dim: 32
+    input_dim: 4096
+    proj_dim: 512
+    output_dim: 768
+    K: 255
+    L: 255
+    num_layers: 0
+    num_heads: 12
+    affinity: []
+    input_dropout: 0.2
+    attn_dropout: 0.2
 
 #---------------------------------------------------
 # Loss Function Configuration

@@ -19,8 +19,14 @@ class Controller():
             self.controller = pdController(config.get("location", [0,0,0]))
         else:
             logger.warning(f"Invalid Control value {control_mode} was given, vehicle is uncontrollable")
-            self.running = False
     
     def get_command(self, state):
-        if self.running:
+        #TODO: this is like one frame later but doesn't really matter right?
+        if self.controller.running:
             return self.controller.get_command(state)
+        else:
+            return []
+    
+
+    def is_running(self):
+        return self.controller.running

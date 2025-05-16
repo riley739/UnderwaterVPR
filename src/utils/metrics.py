@@ -16,6 +16,32 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich import box
+import torch 
+
+#TODO Figure out how to get recall performance:
+# Have similarity descriptors for each query
+# Find top k similarity vectors -> and rerank to closest similarity 
+# Find which ones match the ground truth values 
+# I think thats all..  
+
+def compute_recall_rerank(
+                descriptors,
+                dataset,
+                k_values = [1,5,10]
+):     
+        
+        #print(descriptors.shape)  = (255,1,101) so for all querires return top 101 similariity descs
+        correct_at_k = np.zeros(len(k_values))
+        for q_idx, pred in enumerate(descriptors):
+
+            for i, n in enumerate(k_values):
+                # if in top N then also in top NN, where NN > N
+                if dataset.is_correct(q_idx, pred[1:n+1]):
+                    correct_at_k[i:] += 1
+                    break
+        correct_at_k = correct_at_k / len(descriptors)
+        d = {k: v for (k, v) in zip(k_values, correct_at_k)}
+        return d
 
 def compute_recall_performance(
                 descriptors,
@@ -44,6 +70,8 @@ def compute_recall_performance(
     dict
         A dictionary mapping each 'K' value to its corresponding recall@K score.
     """
+
+
 
     assert dataset.num_references + dataset.num_queries == len(
         descriptors

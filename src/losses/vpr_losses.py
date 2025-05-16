@@ -22,6 +22,7 @@ from pytorch_metric_learning.distances import (
     DotProductSimilarity,
     LpDistance,
 )
+from src.losses.aploss import APLoss
 
 class VPRLossFunction(torch.nn.Module):
     def __init__(
@@ -101,6 +102,8 @@ class VPRLossFunction(torch.nn.Module):
                 smooth_loss=False,
                 triplets_per_anchor="all",
             )
+        if "APLoss" in loss_name:
+            return APLoss()
 
         # if you develop your own loss function, you can call it here
         # it's better to implement it in a separate file and import it here

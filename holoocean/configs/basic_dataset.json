@@ -7,7 +7,6 @@
         "package_name": "Ocean",
         "main_agent": "auv0",
         "ticks_per_sec": 60,
-        "lcm_provider": "udpm://239.255.76.67:7667?ttl=0",
         "agents": [
             {
                 "agent_name": "auv0",
@@ -16,8 +15,7 @@
                     {
                         "sensor_type": "RGBCamera",
                         "socket": "DVLSocket",
-                        "Hz": 5,
-                        "lcm_channel": "RGB",
+                        "Hz": 1,
                         "configuration": {
                             "CaptureWidth": 512,
                             "CaptureHeight": 512
@@ -31,7 +29,6 @@
                     {
                         "sensor_type": "PoseSensor",
                         "socket": "DVLSocket",
-                        "lcm_channel": "Pose",
                         "Hz": 5
                     }
                 ],
@@ -39,7 +36,7 @@
                 "location": [
                     175,
                     60,
-                    -285
+                    -275
                 ]
             }
         ]

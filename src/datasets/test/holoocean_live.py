@@ -1,7 +1,9 @@
 import glob
 from src.datasets.test.base_dataset import BaseTestDataset
 import numpy as np
+import pandas as pd 
 
+#NEed to go off dataframes, gets the pose, checks within threshold return true or false 
 class HoloOceanLiveTestDataset(BaseTestDataset):
     def __init__(
         self,
@@ -13,15 +15,20 @@ class HoloOceanLiveTestDataset(BaseTestDataset):
 
 
 
-    #TODO Based on pose of image 
-    def is_correct(self, index: int, predictions) -> bool:
-        return False
+    #TODO Maybe set the theshold elsewehere
     
-    
-    def get_images(self):
-        image_paths = []
-        for path in glob.glob(f"{self.dataset_path}/Images/*"):
-            image_paths.append(path)
+    def is_correct(self, index: int, predictions, threshold = 1) -> bool:
+        position = self.coords[index]
+        dx = position[0] - predictions[0]
+        dy = position[1] - predictions[1]
+        return dx * dx + dy * dy <= threshold * threshold
 
-        # No reference or ground truths
-        return image_paths, [], [] 
+
+    def get_images(self):
+        df = pd.read_csv(self.dataset_path /'holooceanLive.csv')
+        self.coords =  df[['x', 'y', 'z']].to_numpy()
+
+        dbImages = df["name"].to_numpy().astype("str")
+        dbImages = np.char.add('Images/', dbImages)
+
+        return dbImages , [], []  

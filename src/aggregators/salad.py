@@ -70,10 +70,10 @@ class SALAD(nn.Module):
         self.cluster_dim = config["cluster_dim"]
         self.token_dim = config["token_dim"]
         
-        if dropout > 0:
-            dropout = nn.Dropout(dropout)
+        if config["dropout"] > 0:
+            self.dropout = nn.Dropout(config["dropout"])
         else:
-            dropout = nn.Identity()
+            self.dropout = nn.Identity()
 
         # MLP for global scene token g
         self.token_features = nn.Sequential(
@@ -84,14 +84,14 @@ class SALAD(nn.Module):
         # MLP for local features f_i
         self.cluster_features = nn.Sequential(
             nn.Conv2d(self.num_channels, 512, 1),
-            dropout,
+            self.dropout,
             nn.ReLU(),
             nn.Conv2d(512, self.cluster_dim, 1)
         )
         # MLP for score matrix S
         self.score = nn.Sequential(
             nn.Conv2d(self.num_channels, 512, 1),
-            dropout,
+            self.dropout,
             nn.ReLU(),
             nn.Conv2d(512, self.num_clusters, 1),
         )

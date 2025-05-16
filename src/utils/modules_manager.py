@@ -82,6 +82,7 @@ def get_dataset(name, config, dataset_type):
     try:
         dataset = get_instance("src.datasets", f"{name}{dataset_type.capitalize()}Dataset", params)
     except AttributeError:
-        print("Dataset not found: Using default dataset")
-        dataset = get_instance("src.datasets", f"Base{dataset_type.capitalize()}Dataset", params)
+        print(f"Dataset {f"{name}{dataset_type.capitalize()}Dataset"} not found: Using default {dataset_type.capitalize()} Dataset")
+        # dataset = get_instance("src.datasets", f"Base{dataset_type.capitalize()}Dataset", params)
+        raise AttributeError #Not sure if should fallback or just cop it
     return dataset 

@@ -9,7 +9,7 @@
 # Datamodule Configuration
 #---------------------------------------------------
 datamodule:
-  train_set_name: "HoloOceanPlaces"
+  train_set_name: "HoloOcean"
   train_image_size: 
     - 280
     - 280
@@ -20,7 +20,9 @@ datamodule:
     - 322
     - 322
   val_set_names:
-    - "HoloOceanPlaces"
+    - "holoocean"
+  test_set_names:
+    - "HoloOcean"  
 
 #---------------------------------------------------
 # VPR Model Configuration
@@ -68,9 +70,9 @@ trainer:
 
 evaluation:
   log_dir: "logs"
-  checkpoint_path: "/home/rbeh9716/Desktop/UnderwaterVPR/logs/DinoV2/BoQ/version_15/checkpoints/last.ckpt"
+  checkpoint_path: "https://github.com/amaralibey/Bag-of-Queries/releases/download/v1.0/dinov2_12288.pth"
   save_descriptors: True
-  recall_values: [1, 5, 10]
+  recall_values: [1, 5, 10, 25]
   use_labels: False
   num_preds_to_save: 3
   save_only_wrong_preds: False
