@@ -1,0 +1,81 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2024 Amar Ali-bey
+# https://github.com/amaralibey/OpenVPRLab
+# Licensed under the MIT License. See LICENSE file in the project root.
+# ----------------------------------------------------------------------------
+
+#---------------------------------------------------
+# Datamodule Configuration
+#---------------------------------------------------
+datamodule:
+  train_set_name: "HoloOcean"
+  train_image_size:
+    - 280
+    - 280
+  img_per_place: 4
+  batch_size: 10
+  num_workers: 8
+  val_image_size:
+    - 322
+    - 322
+  val_set_names:
+    - "HoloOcean"
+  test_set_names:
+    - "Rerank"
+
+#---------------------------------------------------
+# VPR Model Configuration
+#---------------------------------------------------
+backbone:
+  model: Default
+  params: []
+
+aggregator:
+  method: GNN
+  params:
+    input_dim: 12288
+    proj_dim: 512
+    output_dim: 768
+    K: 100
+    L: 100
+    num_layers: 1
+    num_heads: 12
+    affinity: ["positional"]
+    input_dropout: 0.2
+    attn_dropout: 0.2
+    aff_dim: 100
+
+#---------------------------------------------------
+# Loss Function Configuration
+#---------------------------------------------------
+loss_function:
+  class: VPRLossFunction
+  params:
+    loss_fn_name: "APLoss" # other possible values: "SupConLoss", "ContrastiveLoss", "TripletMarginLoss"
+    miner_name: #"MultiSimilarityMiner"    # other possible values: "TripletMarginMiner", "PairMarginMiner"
+
+#---------------------------------------------------
+# Trainer Configuration
+#---------------------------------------------------
+trainer:
+  optimizer: adamw
+  learning_rate: 0.0002
+  weight_decay: 0.001
+  warmup: 3900 # linear warmup steps
+  max_epochs: 40
+  milestones:
+    - 10
+    - 20
+    - 30
+  lr_mult: 0.1 # learning rate multiplier at each milestone
+
+evaluation:
+  log_dir: "logs"
+  checkpoint_path: "gnn.ckpt"
+  save_descriptors: True
+  recall_values: [1, 5, 10, 15, 20, 25]
+  use_labels: False
+  num_preds_to_save: 3
+  save_only_wrong_preds: False
+  descriptor_dimension: 12288
+  visualize_cameras: True

@@ -1,0 +1,16 @@
+package my_types;
+
+struct pose_t
+{
+    double position[3];    # x, y, z
+    boolean    is_correct; 
+}
+
+struct three_poses_t
+{
+    int64 timestamp;
+    pose_t query_pose;
+    pose_t pose1;
+    pose_t pose2;
+    pose_t pose3;
+}

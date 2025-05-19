@@ -9,7 +9,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Simulation Output")
 
         # Widgets
-        self.plot_widget = LivePlotWidget()
+        self.plot_widget = LivePlotWidget(config)
         self.image_widget = ImageDisplayWidget("RGB Camera")
         self.sonar_widget = SonarWidget(config)
 
@@ -40,3 +40,4 @@ class MainWindow(QMainWindow):
         communicator.image_signal.connect(self.image_widget.update_image)
         communicator.sonar_signal.connect(self.sonar_widget.update_data)
         communicator.shutdown_signal.connect(self.close)
+        communicator.loopclosure_signal.connect(self.plot_widget.update_points)

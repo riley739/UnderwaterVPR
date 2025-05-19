@@ -1,6 +1,6 @@
 import numpy as np
-# from pynput import keyboard
-import numpy as keyboard
+from pynput import keyboard
+# import numpy as keyboard
 from loguru import logger 
 
 class KeyBoardController():
@@ -12,6 +12,7 @@ class KeyBoardController():
 
         self.pressed_keys = list()
         self.force = 25
+        self.running=True
 
         # self.forward = [1.0, 0.0, 0.0]
         # self.left = [0.0, 1.0, 0.0]

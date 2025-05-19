@@ -87,3 +87,5 @@ def save_preds(predictions, correct, eval_ds, log_dir, img, val):
     pred_image_path = viz_dir / f"{val:05d}.jpg"
 
     prediction_image.save(pred_image_path)
+
+    return prediction_image

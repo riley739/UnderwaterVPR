@@ -17,11 +17,18 @@ class HoloOceanLiveTestDataset(BaseTestDataset):
 
     #TODO Maybe set the theshold elsewehere
     
-    def is_correct(self, index: int, predictions, threshold = 1) -> bool:
+    def is_correct(self, index: int, predictions, threshold = 1, return_dist = False) -> bool:
         position = self.coords[index]
         dx = position[0] - predictions[0]
         dy = position[1] - predictions[1]
-        return dx * dx + dy * dy <= threshold * threshold
+        dist_sq = dx * dx + dy * dy
+        within = dist_sq <= threshold * threshold
+
+        if return_dist:
+            distance = dist_sq ** 0.5  # Euclidean distance
+            return within, distance
+
+        return within 
 
 
     def get_images(self):

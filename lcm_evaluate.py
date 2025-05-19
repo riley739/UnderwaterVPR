@@ -27,15 +27,26 @@ from tqdm import tqdm
 from prettytable import PrettyTable
 from torchvision.transforms import v2  as T2
 import threading
+import lcm
 from lcm_src.lcm_handler import LCMImageReceiver
+from lcm_src.messages.LoopClosure import LoopClosure
+from lcm_src.messages.Pose import Pose
+
+import keyboard
 
 import os
 import sys
-
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 # Get the absolute path to the `main/` directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.append(project_root)
+
+
+def make_pose(pos):
+    p = Pose()
+    p.position = pos
+    return p
 
 val_transform = T2.Compose([
             T2.ToImage(),
@@ -139,12 +150,16 @@ def evaluate(config):
 
 
     receiver = LCMImageReceiver()
+    pub = lcm.LCM()
+
     receiver.start_background_thread()
 
     count = 0 
     while True:
+        keyboard.wait('space')
         img = receiver.get_latest_image()
         if img is not None:
+        
             pose = receiver.get_latest_pose() #TODO : This should line up relatively well but should be checked as pose and camera are sent differently , pose is more common tho so should give relatively accurate estimation
             img_tensor = val_transform(img).unsqueeze(0)
             query_descriptor = get_descriptor(model, img_tensor, config["device"])
@@ -158,6 +173,42 @@ def evaluate(config):
             correct = get_correct(predictions, dataset, pose, threshold)
             img = save_preds(predictions, correct, dataset, log_dir, img, count)
             count += 1
+
+            img = np.array(img)
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            # resized_image = cv2.resize(image, (width, height))
+            cv2.imshow("test", img)
+            cv2.waitKey(1)
+
+            lc = LoopClosure()
+            poses = []
+            for i, pred in enumerate(predictions[0]):
+                p = Pose()
+                position = dataset.coords[pred]
+
+                p.position = position
+
+                if correct[i][0]: 
+                    p.is_correct = True
+                else:
+                    p.is_correct = False
+
+                poses.append(p)
+        
+            lc.pose1 = poses[0]
+            lc.pose2 = poses[1]
+            lc.pose3 = poses[2]
+            
+            query = Pose()
+            query.is_correct = False
+            query.position = pose
+
+            lc.query_pose = query
+
+
+
+            
+            pub.publish("loopclosure", lc.encode())
 
 
 

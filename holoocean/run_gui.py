@@ -45,10 +45,14 @@ def run_gui(config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Read a config file as an argument.")
     parser.add_argument("--config_file", type=str, default = "configs/default.json", help="Path to the configuration file")
+    parser.add_argument("--database", type=str, default = None, help="Path to the database file")
 
     #TODO: Update this to be like the other methods in underwater vpr 
     args = parser.parse_args()
     config = load_config(args.config_file)
+     
+    if args.database:
+        config["scenario"]["database"] = args.database
 
     print(f"Using config file {args.config_file}")
 

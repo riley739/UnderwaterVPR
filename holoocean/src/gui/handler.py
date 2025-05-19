@@ -1,7 +1,8 @@
 import lcm
-from src.lcm.messages import PoseSensor
-from src.lcm.messages import RGBCamera
-from src.lcm.messages import ImagingSonar
+from src.lcm.messages.PoseSensor import PoseSensor
+from src.lcm.messages.RGBCamera import RGBCamera
+from src.lcm.messages.ImagingSonar import ImagingSonar
+from src.lcm.messages.LoopClosure import LoopClosure
 import numpy as np
 
 class LCMHandler:
@@ -22,7 +23,8 @@ class LCMHandler:
                 self.lc.subscribe(sensor["lcm_channel"], self.handle_image)
             elif "imaging" in sensor.get("lcm_channel", "").lower():
                 self.lc.subscribe(sensor["lcm_channel"], self.handle_imaging_sonar)
-            self.lc.subscribe("shutdown", self.handle_shutdown)
+        self.lc.subscribe("shutdown", self.handle_shutdown)
+        self.lc.subscribe("loopclosure", self.hand_lc)
             
     def handle_pose(self, channel, data):
         msg = PoseSensor.decode(data).matrix
@@ -39,6 +41,10 @@ class LCMHandler:
 
     def handle_shutdown(self, channel, data):
         self.comm.shutdown_signal.emit()
+
+    def hand_lc(self, channel, data):
+        msg = LoopClosure.decode(data)
+        self.comm.loopclosure_signal.emit(msg)
         
     def handle_once(self):
         # Non-blocking version

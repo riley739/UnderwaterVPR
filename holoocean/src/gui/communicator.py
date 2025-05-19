@@ -8,6 +8,7 @@ class Communicator(QObject):
     pose_signal = pyqtSignal(float, float, float)
     image_signal = pyqtSignal(object)
     shutdown_signal = pyqtSignal()
+    loopclosure_signal = pyqtSignal(object)
 
 
 
